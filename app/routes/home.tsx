@@ -167,7 +167,7 @@ export default function Home() {
         // Update stateNames when state changes
         const newStateNames = [
           ...new Set(parsedState.flatMap((s) => s.mutations.map((m) => m.name))),
-        ];
+        ].sort();
         setStates(newStateNames.map((name, index) => ({
           name,
           selected: true,
@@ -181,11 +181,11 @@ export default function Home() {
 
   const initialStateNames = [
     ...new Set(state.flatMap((s) => s.mutations.map((m) => m.name))),
-  ];
+  ].sort();
   const [stateNames, setStates] = useState(
     initialStateNames.map((name, index) => ({
       name,
-      selected: index < 2,
+      selected: true,
     }))
   );
   const [selectedLoc, setSelectedLoc] = useState<string | null>(state[0].id);
@@ -315,7 +315,16 @@ export default function Home() {
 
     if (currentState instanceof Set) {
       return {
-        state: Array.from(currentState),
+        state: Array.from(currentState).sort(),
+        origins: origins[stateName] || {},
+        currentLoc: selectedLoc
+      };
+    }
+
+    if (typeof currentState === 'object' && !Array.isArray(currentState) && currentState !== null) {
+      const sortedEntries = Object.entries(currentState).sort((a, b) => a[0].localeCompare(b[0]));
+      return {
+        state: Object.fromEntries(sortedEntries),
         origins: origins[stateName] || {},
         currentLoc: selectedLoc
       };
@@ -328,7 +337,7 @@ export default function Home() {
     };
   };
 
-  const selectedStates = stateNames.filter((s) => s.selected);
+  const selectedStates = stateNames.filter((s) => s.selected).sort((a, b) => a.name.localeCompare(b.name));
 
   const renderStateValue = (state: any, origins: Record<string | number, string>, currentLoc: string) => {
     console.log(typeof state);
@@ -355,7 +364,7 @@ export default function Home() {
     } else if (typeof state === 'object') {
       return (
         <div className="space-y-1">
-          {Object.entries(state).map(([key, value]) => (
+          {Object.entries(state).sort((a, b) => a[0].localeCompare(b[0])).map(([key, value]) => (
             <div 
               key={key}
               onClick={(e) => {
