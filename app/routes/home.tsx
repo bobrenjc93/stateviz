@@ -185,7 +185,7 @@ export default function Home() {
   const [stateNames, setStates] = useState(
     initialStateNames.map((name, index) => ({
       name,
-      selected: true,
+      selected: index < 2,
     }))
   );
   const [selectedLoc, setSelectedLoc] = useState<string | null>(state[0].id);
