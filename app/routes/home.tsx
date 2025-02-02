@@ -27,7 +27,7 @@ export function meta() {
   ];
 }
 
-type Mutation = 
+type Mutation =
   | { event: "SET_ADD" | "SET_DELETE"; name: string; key: string }
   | { event: "DICT_SET" | "DICT_DELETE"; name: string; key: string; value?: string }
   | { event: "ARRAY_PUSH"; name: string; value: number }
@@ -57,7 +57,7 @@ const EXAMPLE_STATE: StateEntry[] = [
   },
   {
     id: generateId(),
-    loc: "model.py:45", 
+    loc: "model.py:45",
     mutations: [
       {
         event: "DICT_SET",
@@ -128,16 +128,27 @@ let FLAG = true;
 
 export default function Home() {
   const [state, setState] = useState<StateEntry[]>(EXAMPLE_STATE);
-  const [dialogOpen, setDialogOpen] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [stateInput, setStateInput] = useState("");
   const locListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadState = async () => {
-      if (!FLAG) {
-        return;
+      const urlParams = new URLSearchParams(window.location.search);
+      const url = urlParams.get('url');
+      if (url) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const jsonData = await response.json();
+            setState(jsonData);
+          }
+        } catch (error) {
+          console.error("Error loading data from URL:", error);
+        }
+      } else if (FLAG) {
+        setDialogOpen(true);
       }
-      setDialogOpen(true);
     };
     loadState();
   }, []);
@@ -340,12 +351,11 @@ export default function Home() {
   const selectedStates = stateNames.filter((s) => s.selected).sort((a, b) => a.name.localeCompare(b.name));
 
   const renderStateValue = (state: any, origins: Record<string | number, string>, currentLoc: string) => {
-    console.log(typeof state);
     if (Array.isArray(state)) {
       return (
         <div className="space-y-1">
           {state.map((value, index) => (
-            <div 
+            <div
               key={index}
               onClick={(e) => {
                 e.preventDefault();
@@ -365,13 +375,11 @@ export default function Home() {
       return (
         <div className="space-y-1">
           {Object.entries(state).sort((a, b) => a[0].localeCompare(b[0])).map(([key, value]) => (
-            <div 
+            <div
               key={key}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log(key)
-                console.log(origins)
                 setSelectedLoc(origins[key]);
               }}
               className={`cursor-pointer hover:bg-accent/50 p-1 rounded ${
@@ -385,7 +393,7 @@ export default function Home() {
       );
     } else if (typeof state === 'string') {
       return (
-        <div 
+        <div
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -472,7 +480,6 @@ export default function Home() {
                     <div>
                       {(() => {
                         const { state: stateValue, origins, currentLoc } = getStateAtLoc(state.name);
-                        console.log(origins)
                         return renderStateValue(stateValue, origins, currentLoc);
                       })()}
                     </div>
