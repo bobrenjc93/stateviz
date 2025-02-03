@@ -130,7 +130,19 @@ export default function Home() {
   const [state, setState] = useState<StateEntry[]>(EXAMPLE_STATE);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [stateInput, setStateInput] = useState("");
+  const initialStateNames = [
+    ...new Set(state.flatMap((s) => s.mutations.map((m) => m.name))),
+  ].sort();
+  const [stateNames, setStates] = useState<any>(
+    initialStateNames.map((name, index) => ({
+      name,
+      selected: index < 2,
+    }))
+  );
+  const [selectedLoc, setSelectedLoc] = useState<string | null>(state[0].id);
   const locListRef = useRef<HTMLDivElement>(null);
+
+  console.log(state)
 
   useEffect(() => {
     const loadState = async () => {
@@ -141,9 +153,19 @@ export default function Home() {
           const response = await fetch(url);
           if (response.ok) {
             const jsonData = await response.json();
-            setState(jsonData.map(x => ({
+            const parsedState = jsonData.map(x => ({
               ...x,
               id: generateId()
+            }));
+            FLAG = false;
+            setState(parsedState);
+            // Update stateNames when state changes
+            const newStateNames = [
+              ...new Set(parsedState.flatMap((s) => s.mutations.map((m) => m.name))),
+            ].sort();
+            setStates(newStateNames.map((name, index) => ({
+              name,
+              selected: true,
             })));
           }
         } catch (error) {
@@ -193,16 +215,6 @@ export default function Home() {
     setDialogOpen(false);
   };
 
-  const initialStateNames = [
-    ...new Set(state.flatMap((s) => s.mutations.map((m) => m.name))),
-  ].sort();
-  const [stateNames, setStates] = useState(
-    initialStateNames.map((name, index) => ({
-      name,
-      selected: index < 2,
-    }))
-  );
-  const [selectedLoc, setSelectedLoc] = useState<string | null>(state[0].id);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
