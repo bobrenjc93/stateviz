@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Progress } from "~/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -130,6 +131,8 @@ export default function Home() {
   const [state, setState] = useState<StateEntry[]>(EXAMPLE_STATE);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [stateInput, setStateInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const initialStateNames = [
     ...new Set(state.flatMap((s) => s.mutations.map((m) => m.name))),
   ].sort();
@@ -142,34 +145,22 @@ export default function Home() {
   const [selectedLoc, setSelectedLoc] = useState<string | null>(state[0].id);
   const locListRef = useRef<HTMLDivElement>(null);
 
-  console.log(state)
-
   useEffect(() => {
     const loadState = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const url = urlParams.get('url');
       if (url) {
+        setIsLoading(true);
         try {
           const response = await fetch(url);
           if (response.ok) {
             const jsonData = await response.json();
-            const parsedState = jsonData.map(x => ({
-              ...x,
-              id: generateId()
-            }));
-            FLAG = false;
-            setState(parsedState);
-            // Update stateNames when state changes
-            const newStateNames = [
-              ...new Set(parsedState.flatMap((s) => s.mutations.map((m) => m.name))),
-            ].sort();
-            setStates(newStateNames.map((name, index) => ({
-              name,
-              selected: true,
-            })));
+            processState(jsonData);
           }
         } catch (error) {
           console.error("Error loading data from URL:", error);
+        } finally {
+          setIsLoading(false);
         }
       } else if (FLAG) {
         setDialogOpen(true);
@@ -177,6 +168,7 @@ export default function Home() {
     };
     loadState();
   }, []);
+
 
   const handleStateSubmit = () => {
     if (stateInput) {
@@ -198,21 +190,30 @@ export default function Home() {
         });
       } catch {}
       if (Array.isArray(parsedState)) {
-        FLAG = false;
-        setState(parsedState);
-        // Update stateNames when state changes
-        const newStateNames = [
-          ...new Set(parsedState.flatMap((s) => s.mutations.map((m) => m.name))),
-        ].sort();
-        setStates(newStateNames.map((name, index) => ({
-          name,
-          selected: true,
-        })));
+        processState(parsedState);
       } else {
         alert("Invalid state format. Using example state instead.");
       }
     }
     setDialogOpen(false);
+  };
+
+  const processState = (stateData: any[]) => {
+    const parsedState = stateData.map((x) => ({
+      ...x,
+      id: generateId(),
+    }));
+    FLAG = false;
+    setState(parsedState);
+    const newStateNames = [
+      ...new Set(parsedState.flatMap((s) => s.mutations.map((m) => m.name))),
+    ].sort();
+    setStates(
+      newStateNames.map((name) => ({
+        name,
+        selected: true,
+      }))
+    );
   };
 
 
@@ -424,6 +425,15 @@ export default function Home() {
     }
     return state;
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex flex-col gap-4 items-center justify-center">
+        <Progress value={progress} className="w-[60%]" />
+        <p className="text-sm text-muted-foreground">Loading files...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen">
