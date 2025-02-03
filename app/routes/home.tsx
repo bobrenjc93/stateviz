@@ -141,7 +141,10 @@ export default function Home() {
           const response = await fetch(url);
           if (response.ok) {
             const jsonData = await response.json();
-            setState(jsonData);
+            setState(jsonData.map(x => ({
+              ...x,
+              id: generateId()
+            })));
           }
         } catch (error) {
           console.error("Error loading data from URL:", error);
